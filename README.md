@@ -1,106 +1,217 @@
-# VT Compass — setup and notes
+# VT Compass
 
-A SwiftUI campus compass for Virginia Tech. No third-party packages, no backend,
-no auth. iOS 16+, portrait, light mode first.
+VT Compass is a SwiftUI iOS campus navigation application designed to help students, visitors, and members of the Virginia Tech community find their way around the Blacksburg campus.
 
-## 1. Add the files to Xcode
+Instead of requiring users to interpret a traditional campus map, VT Compass allows a user to select a campus destination and receive simple directional information based on their current location, including distance, estimated walking time, and a live compass pointing toward the destination.
 
-1. New project → iOS → App → Interface **SwiftUI**, Language **Swift**.
-2. Delete the generated `ContentView.swift`.
-3. Drag the `Models`, `Services`, `Views`, `Utilities` folders and
-   `VTCompassApp.swift` into the project navigator.
-   Check **Copy items if needed** and **Create groups**.
-4. If your product name isn't `VTCompass`, Xcode already made its own `@main`
-   App file. Keep one of the two, not both — see the note at the top of
-   `VTCompassApp.swift`.
+## Team Members
 
-## 2. Required Info.plist entry
-
-Target → **Info** tab → add:
-
-| Key | Value |
+| Team Member | Email |
 |---|---|
-| `NSLocationWhenInUseUsageDescription` | `VT Compass uses your location to point you toward the building you select.` |
+| Sandhya Bontu | bsandhya17@vt.edu |
+| Henry Doan | hdoan05@vt.edu |
+| TyKhori Cabiness | khori@vt.edu |
 
-Without this key iOS never shows the permission prompt and the compass silently
-stays dead. This is the single most common reason CoreLocation "doesn't work."
+## Project Overview
 
-Nothing else is needed — no entitlement, no background mode, no capability.
+Virginia Tech's campus contains many academic buildings, residence halls, dining facilities, athletic facilities, student-life spaces, and landmarks. For students who are new to campus and visitors who are unfamiliar with the area, finding a specific destination can be difficult.
 
-## 3. Images (optional)
+VT Compass addresses this problem by providing a simple campus-focused navigation experience. Users can search or filter campus destinations, select a location, and use their phone's current location and compass heading to determine which direction they should travel.
 
-Drop images into `Assets.xcassets` named exactly:
+The application is built entirely with Swift and SwiftUI and uses Apple's CoreLocation framework for location and heading information.
 
-`squires`, `torgersen`, `newman`, `burruss`, `mcbryde`, `goodwin`, `lane`,
-`cassell`, `moss`, `inn`, `drillfield`, `glc`
+## Features
 
-Any that are missing render a maroon placeholder tile. The app will not crash
-and will not try to download anything.
+- Search Virginia Tech campus destinations by name, category, descriptor, or supported aliases.
+- Browse and filter campus destinations.
+- View academic buildings, residence halls, dining locations, athletic facilities, and campus landmarks.
+- View destination information and building images when available.
+- Calculate the user's distance from a selected destination.
+- Estimate walking time to the selected destination.
+- Display a live compass arrow pointing toward the destination.
+- Provide directional messages such as whether the destination is ahead or behind the user.
+- Detect when the user has arrived near the selected destination.
+- Save buildings as favorites.
+- Persist favorites between app launches.
+- Handle denied location permissions without crashing.
+- Provide fallback icons when a building image is unavailable.
+- Warn users when a destination's coordinate has not yet been verified.
 
-## 4. Fix the coordinates before you demo
+## Technologies Used
 
-Every building is currently `coordinatesVerified: false`, and the detail screen
-shows an orange "approximate location" note because of it. The values are my
-approximations of where these buildings sit on campus — right neighborhood,
-not surveyed. I did not have a way to verify them, so I flagged them rather
-than presenting them as accurate.
+- Swift
+- SwiftUI
+- CoreLocation
+- UIKit
+- Xcode
+- UserDefaults
 
-To replace one (about 15 seconds each):
 
-1. Open Apple Maps or Google Maps, find the building.
-2. Long-press the roof → copy the coordinate.
-3. Paste into `BuildingData.swift` and flip that building's flag to
-   `coordinatesVerified: true`.
+## Requirements
 
-The note disappears per-building as you verify them.
+To build and run VT Compass, you will need:
 
-## 5. Testing the compass
+- macOS
+- Xcode
+- iOS 16 or later
+- An iPhone or iOS Simulator
 
-The Simulator has **no magnetometer**, so heading is always nil there — you'll
-see distance and walking time but a dimmed arrow and "Waiting for compass...".
-That is correct behavior, not a bug. Test on a physical iPhone.
+A physical iPhone is strongly recommended for testing the live compass because the iOS Simulator does not provide the same magnetometer/heading functionality as a physical device.
 
-On device, the checks worth doing:
+## How to Run the Program
 
-- Stand still, spin slowly in a full circle. The arrow should stay locked on the
-  same physical direction the whole way around, including as you pass north.
-  No whipping, no backwards spin — that's what the accumulated
-  `displayRotation` in `BuildingDetailView` prevents.
-- Pick a building you can see. Confirm the arrow agrees with your eyes. If it's
-  consistently off by the same amount for every building, that's a coordinate
-  problem (step 4). If it's off for only one building, that one building's
-  coordinate is wrong.
-- Deny location in Settings, reopen → friendly card with an Open Settings
-  button, no crash.
+### 1. Open or Create the Xcode Project
 
-## 6. Known warning
+Open the VT Compass Xcode project if the complete project repository is available.
 
-`onChange(of:perform:)` in `BuildingDetailView` uses the iOS 16 signature, which
-Xcode marks deprecated when building against iOS 17+. It still compiles and
-works. If you want it clean and can require iOS 17, change it to:
+If creating a new Xcode project from the source files:
 
-```swift
-.onChange(of: targetRotation) { _, newValue in
-    guard let newValue else { return }
-    advanceRotation(toward: newValue)
-}
-```
+1. Open Xcode.
+2. Select **Create a new Xcode project**.
+3. Choose **iOS → App**.
+4. Set the interface to **SwiftUI**.
+5. Set the language to **Swift**.
+6. Add the VT Compass Swift source files to the project.
+7. Make sure **Copy items if needed** is selected when importing the files.
+8. Make sure there is only one Swift file containing the `@main` application entry point.
 
-## 7. What I could not verify
+`VTCompassApp.swift` should be used as the application entry point.
 
-This code was written in a Linux sandbox with no Swift toolchain and no Xcode,
-so **it has never been compiled**. The logic is straightforward and I checked it
-carefully, but expect the possibility of a typo or an API-signature nit on first
-build. Paste any compiler errors back and I'll fix them.
+### 2. Configure Location Permission
 
-## File map (matches the phase order in the spec)
+VT Compass requires access to the user's location.
 
-| Phase | Files |
-|---|---|
-| 1 — model + data | `Models/Building.swift`, `Models/BuildingData.swift` |
-| 2 — explore, search, nav | `Views/ExploreView.swift`, `Views/BuildingRow.swift` |
-| 3 — static detail UI | `Views/BuildingDetailView.swift`, `Views/CompassView.swift` |
-| 4 — location + permissions | `Services/LocationManager.swift` |
-| 5, 6, 7, 8 — distance, bearing, wraparound, walk time | `Utilities/LocationMath.swift` |
-| 9 — favorites | `Services/FavoritesManager.swift`, `Views/FavoritesView.swift` |
-| 10 — polish | `Utilities/Theme.swift` |
+In Xcode:
+
+1. Select the project.
+2. Select the application target.
+3. Open the **Info** tab.
+4. Add the following key:
+
+`NSLocationWhenInUseUsageDescription`
+
+Suggested value:
+
+`VT Compass uses your location to point you toward the building you select.`
+
+Without this permission description, iOS will not correctly request location access and the compass navigation functionality will not work.
+
+### 3. Add Building Images
+
+Building images should be stored in `Assets.xcassets`.
+
+Each image asset should use the same name as the corresponding building's `imageName`/ID in the project data.
+
+If an image cannot be found, VT Compass automatically displays a fallback building/category icon instead of crashing.
+
+### 4. Build the Application
+
+Select an iOS Simulator or connected iPhone from the Xcode device menu.
+
+Then select:
+
+**Product → Build**
+
+or press:
+
+**Command + B**
+
+Resolve any signing configuration requested by Xcode if running the application on a physical device.
+
+### 5. Run the Application
+
+Select:
+
+**Product → Run**
+
+or press:
+
+**Command + R**
+
+When prompted, allow VT Compass to access your location while using the application.
+
+### 6. Testing the Compass
+
+For full compass testing, run VT Compass on a physical iPhone.
+
+Select a destination and slowly rotate the phone. The compass arrow should continue pointing toward the selected destination as the phone changes direction.
+
+The Simulator can still be used to test much of the interface, search functionality, filtering, favorites, and other application behavior, but live heading functionality should be verified on a physical device.
+
+## How Navigation Works
+
+VT Compass combines the user's current geographic position with the stored coordinate of the selected destination.
+
+The application calculates:
+
+1. The straight-line distance between the user and destination.
+2. The geographic bearing from the user's position to the destination.
+3. The difference between that bearing and the phone's current heading.
+4. The rotation required for the on-screen compass arrow.
+
+The application also handles compass-angle wraparound so that crossing north does not cause the arrow to unnecessarily rotate almost an entire circle in the opposite direction.
+
+Walking time is currently estimated using distance and an average walking speed rather than an actual pedestrian route.
+
+## Building Data
+
+Most verified building coordinates are based on Virginia Tech's published building information.
+
+Destinations that do not yet have an authoritative coordinate are explicitly marked as unverified by the application. This allows the app to distinguish verified destination data from approximate locations instead of presenting estimates as exact positions.
+
+## Favorites
+
+Users can tap the heart icon associated with a destination to add or remove it from their favorites.
+
+Favorite building IDs are stored locally using `UserDefaults`, allowing the Favorites tab to persist between application launches.
+
+## Known Limitations
+
+- Some campus destinations do not yet have verified coordinates.
+- Building photographs must be included manually in the application's asset catalog; missing photographs use fallback icons.
+- Walking time is an estimate based on straight-line distance and average walking speed rather than an actual pedestrian route.
+- Live compass heading functionality should be tested on a physical iPhone.
+- The iOS 16 `onChange` implementation used by the project may produce a deprecation warning when building against newer iOS SDKs.
+
+## Future Improvements
+
+Given additional development time, we would like to:
+
+- Add photographs for all supported campus destinations.
+- Verify all remaining approximate destination coordinates.
+- Integrate MapKit for actual pedestrian routes and more accurate walking-time estimates.
+- Add an interactive Virginia Tech campus map.
+- Expand destination categories and campus information.
+- Add additional accessibility and appearance options.
+- Add automated unit tests for bearing, distance, compass rotation, and navigation calculations.
+- Update deprecated APIs for newer versions of iOS.
+- Continue improving the user interface and destination data.
+
+## Project Structure
+
+The project is organized around several main responsibilities:
+
+- `Building.swift` — campus destination model and categories.
+- `BuildingData.swift` — campus destination data, coordinates, aliases, and search.
+- `ExploreView.swift` — destination search, filtering, and browsing.
+- `BuildingRow.swift` / `BuildingThumbnail.swift` — reusable destination list UI.
+- `BuildingDetailView.swift` — destination details, distance, walking time, and compass navigation.
+- `CompassView.swift` — visual compass interface.
+- `LocationManager.swift` — CoreLocation authorization, user location, and device heading.
+- `LocationMath.swift` — distance, bearing, angle normalization, and walking-time calculations.
+- `FavoritesManager.swift` — persistent favorite destinations.
+- `FavoritesView.swift` — saved destinations.
+- `Theme.swift` — shared application colors and styling.
+- `ContentView.swift` — main tab interface.
+- `VTCompassApp.swift` — application entry point and shared environment objects.
+
+## Authors
+
+**Sandhya Bontu**  
+bsandhya17@vt.edu
+
+**Henry Doan**  
+hdoan05@vt.edu
+
+**TyKhori Cabiness**  
+khori@vt.edu
